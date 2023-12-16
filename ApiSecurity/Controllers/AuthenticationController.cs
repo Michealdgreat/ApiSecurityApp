@@ -31,16 +31,14 @@ public class AuthenticationController : ControllerBase
             return Unauthorized();
         }
 
-        var token =GenerateToken(user);
+        var token = GenerateToken(user);
 
         return Ok(token);
     }
 
     private string GenerateToken(UserData user)
     {
-        var secretKey = new SymmetricSecurityKey(
-                                        Encoding.ASCII.GetBytes(
-                                            _config.GetValue<string>("Authentication:Secretkey")));
+        var secretKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_config.GetValue<string>("Authentication:SecretKey")));
 
         var signingCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
@@ -56,6 +54,7 @@ public class AuthenticationController : ControllerBase
                                                        DateTime.UtcNow, //when this token becomes valid
                                                        DateTime.UtcNow.AddMinutes(1), // when the token will expire
                                                        signingCredentials);
+
         return new JwtSecurityTokenHandler().WriteToken(token);                             
 
     }
