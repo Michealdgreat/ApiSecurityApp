@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -18,10 +19,11 @@ public class AuthenticationController : ControllerBase
         _config = config;
     }
     public record AuthenticationData(string? UserName, string? Password);
-    public record UserData(int UserId, string UserName);
+    public record UserData(int UserId, string UserName, string Title, string EmployeeID);
 
     // api/Authentication/token
     [HttpPost("token")]
+    [AllowAnonymous] // to override fall back lockdown policy //program.cs ln 16
     public ActionResult<string> Authenticate([FromBody] AuthenticationData data)
     {
         var user = ValidateCredentials(data);
@@ -46,6 +48,9 @@ public class AuthenticationController : ControllerBase
 
         claims.Add(new(JwtRegisteredClaimNames.Sub, user.UserId.ToString()));
         claims.Add(new(JwtRegisteredClaimNames.UniqueName, user.UserName));
+        claims.Add(new("title", user.Title));
+        claims.Add(new("employeeID", user.EmployeeID));
+
 
         var token = new JwtSecurityToken(
                                                        _config.GetValue<string>("Authentication:Issuer"),
@@ -68,12 +73,12 @@ public class AuthenticationController : ControllerBase
 
         if (CompareValue(data.UserName, "Micheal") && CompareValue(data.Password, "Shodamola"))
         {
-            return new UserData(1, data.UserName!);
+            return new UserData(1, data.UserName!, "Business Owner", "ES001");
         }
 
         if (CompareValue(data.UserName, "Mike") && CompareValue(data.Password, "Shodamola"))
         {
-            return new UserData(1, data.UserName!);
+            return new UserData(1, data.UserName!, "Head of Security", "ES003");
         }
 
         return null;
